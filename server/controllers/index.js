@@ -1,4 +1,4 @@
-const { User,Event } = require("../models");
+const { User } = require("../models");
 const { comparePassword } = require("../helpers/bcrypt");
 const { generateToken } = require("../helpers/jwt");
 
