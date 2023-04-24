@@ -1,68 +1,22 @@
-const mqtt = require('mqtt');
-const express = require('express');
-const bodyParser = require('body-parser');
-const jsonParser = bodyParser.json();
-const app = express();
-const port = 3000;
+if (process.env.NODE_ENV !== "production") {
+    require("dotenv").config();
+  }
+const express = require('express')
+const app = express()
+const port = process.env.PORT || 3000
+const cors = require('cors')
+const router = require('./routes')
+const errorHandler = require('./middlewares/errorHandler');
 
-const brokerUrl = 'mqtt://broker.address.com';
-const clientId = 'clientId';
-const username = 'username';
-const password = 'password';
 
-let client = null;
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({extended:true}))
 
-const connectMqtt = () => {
-  client = mqtt.connect(brokerUrl, {
-    clientId,
-    username,
-    password
-  });
+app.use(router)
 
-  client.on('connect', () => {
-    console.log('MQTT connected');
-  });
+app.use(errorHandler)
 
-  client.on('error', (error) => {
-    console.log(`MQTT error: ${error}`);
-  });
-};
-
-const publishDummyData = () => {
-  const data = {
-    suhu: parseFloat((Math.random() * 10 + 20).toFixed(2)),
-    kelembaban: parseFloat((Math.random() * 40 + 50).toFixed(2)),
-    tekanan_udara: parseFloat((Math.random() * 200 + 900).toFixed(2))
-  };
-
-  client.publish('topic/data', JSON.stringify(data), () => {
-    console.log('Data published:', data);
-  });
-};
-
-app.post('/start', jsonParser, (req, res) => {
-    if (client === null) {
-      connectMqtt();
-    }
-  
-    if (req.body.interval && req.body.interval > 0) {
-      const intervalId = setInterval(publishDummyData, req.body.interval * 1000);
-      res.status(200).json({ message: `Dummy data started with interval ${req.body.interval} seconds` });
-    } else {
-      res.status(400).json({ message: 'Invalid interval parameter' });
-    }
-  });
-  
-  app.post('/stop', (req, res) => {
-    if (client !== null) {
-      client.end();
-      client = null;
-    }
-  
-    res.status(200).json({ message: 'Dummy data stopped' });
-  });
-  
-  app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-  });
-  
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
